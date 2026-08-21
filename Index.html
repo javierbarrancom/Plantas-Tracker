@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riego Tracker · Diario de plantas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F5EE;
+    --paper:#FFFFFF;
+    --ink:#1B2B1F;
+    --ink-soft:#4B5A4E;
+    --line:#DCE1D2;
+    --moss:#3A5A40;
+    --moss-dark:#243A28;
+    --sage:#6B8F71;
+    --sage-light:#E7EEE3;
+    --overdue:#B23A2E;
+    --overdue-bg:#F7E6E3;
+    --soon:#B8862B;
+    --soon-bg:#FBF0D9;
+    --ok-bg:#E7EEE3;
+    --auto:#3E7686;
+    --auto-bg:#E2EEF1;
+    --shadow: 0 1px 2px rgba(27,43,31,0.06), 0 4px 12px rgba(27,43,31,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:28px 18px 40px;}
+
+  /* HEADER */
+  header.app{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; margin-bottom:22px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); padding-bottom:18px;
+  }
+  .brand h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:30px;
+    margin:0 0 4px; color:var(--moss-dark); letter-spacing:-0.01em;
+  }
+  .brand .sub{ font-size:13.5px; color:var(--ink-soft); }
+  .brand .sub b{ color:var(--moss); font-family:'IBM Plex Mono',monospace; font-weight:500;}
+  .head-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .btn{
+    font-family:'Source Sans 3',sans-serif; font-size:13px; font-weight:600;
+    border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    padding:8px 13px; border-radius:8px; cursor:pointer; transition:.15s;
+  }
+  .btn:hover{border-color:var(--sage); background:var(--sage-light);}
+  .btn.primary{background:var(--moss); border-color:var(--moss); color:#fff;}
+  .btn.primary:hover{background:var(--moss-dark);}
+  .btn:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--moss); outline-offset:2px;
+  }
+  input[type=file]{display:none;}
+
+  /* SATURDAY RIBBON — signature element */
+  .saturday-ribbon{
+    display:flex; align-items:center; gap:12px; margin-bottom:24px;
+    background:var(--moss-dark); color:#EFEFE6; border-radius:12px;
+    padding:14px 18px; box-shadow:var(--shadow);
+  }
+  .saturday-ribbon .icon{font-size:20px;}
+  .saturday-ribbon .txt{font-size:13.5px; line-height:1.4;}
+  .saturday-ribbon b{font-family:'IBM Plex Mono',monospace; color:#C9E4B8;}
+
+  /* TABS */
+  .tabs{display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap;}
+  .tab{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; padding:6px 12px;
+    border-radius:20px; border:1px solid var(--line); background:var(--paper);
+    cursor:pointer; color:var(--ink-soft);
+  }
+  .tab.active{background:var(--moss); border-color:var(--moss); color:#fff;}
+
+  /* GROUP */
+  .group{margin-bottom:26px;}
+  .group-title{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; margin:0 0 10px 2px;
+  }
+  .group-title .count{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:1px 7px;
+    border-radius:10px; background:var(--line); color:var(--ink);
+  }
+  .group-title.overdue{color:var(--overdue);}
+  .group-title.soon{color:var(--soon);}
+  .group-title.ok{color:var(--moss);}
+  .group-title.auto{color:var(--auto);}
+
+  /* CARD */
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    margin-bottom:9px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .card-head{
+    display:flex; align-items:center; gap:12px; padding:13px 15px; cursor:pointer;
+  }
+  .card-head .dot{
+    width:9px; height:9px; border-radius:50%; flex-shrink:0;
+  }
+  .dot.overdue{background:var(--overdue);}
+  .dot.soon{background:var(--soon);}
+  .dot.ok{background:var(--sage);}
+  .dot.auto{background:var(--auto);}
+  .card-head .names{flex:1; min-width:0;}
+  .card-head .apodo{font-family:'Fraunces',serif; font-weight:600; font-size:16.5px; color:var(--ink);}
+  .card-head .real{font-size:12px; color:var(--ink-soft); font-style:italic;}
+  .card-head .meta{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);
+    text-align:right; flex-shrink:0;
+  }
+  .card-head .meta .next-date{font-weight:600;}
+  .card-head .meta.overdue .next-date{color:var(--overdue);}
+  .card-head .meta.soon .next-date{color:var(--soon);}
+  .card-head .water-btn-mini{
+    background:var(--auto); color:#fff; border:none; border-radius:7px; padding:6px 11px;
+    font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .card-head .water-btn-mini:hover{background:#2E5C6A;}
+  .card-head .chevron{color:var(--ink-soft); font-size:12px; flex-shrink:0; transition:.15s;}
+  .card.open .chevron{transform:rotate(90deg);}
+
+  .card-body{display:none; padding:0 15px 16px; border-top:1px solid var(--line);}
+  .card.open .card-body{display:block;}
+  .badges{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px;}
+  .badge{
+    font-size:11px; font-family:'IBM Plex Mono',monospace; padding:3px 8px;
+    border-radius:6px; background:var(--sage-light); color:var(--moss-dark);
+  }
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap;}
+  .field-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .field-value{font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  .date-input{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; border:1px solid var(--line);
+    border-radius:6px; padding:4px 6px; background:var(--bg); color:var(--ink);
+  }
+  .tip-box{
+    margin-top:12px; background:var(--sage-light); border-radius:8px; padding:10px 12px;
+  }
+  .tip-box b{font-size:11px; text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:5px; color:var(--moss);}
+  .tip-box textarea{
+    width:100%; border:none; background:transparent; resize:vertical; min-height:38px;
+    font-family:'Source Sans 3',sans-serif; font-size:13px; line-height:1.5; color:var(--moss-dark);
+    padding:0;
+  }
+  .tip-box textarea:focus{outline:none;}
+  .comments{margin-top:12px;}
+  .comments .field-label{margin-bottom:6px; display:block;}
+  .comment-item{
+    background:var(--bg); border-radius:8px; padding:8px 10px; margin-bottom:6px;
+    font-size:13px; line-height:1.4; display:flex; justify-content:space-between; gap:8px;
+  }
+  .comment-item .meta-date{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); display:block; margin-bottom:2px;}
+  .comment-item .del{background:none; border:none; color:var(--overdue); cursor:pointer; font-size:14px; flex-shrink:0;}
+  .comment-add{display:flex; gap:6px; margin-top:6px;}
+  .comment-add textarea{
+    flex:1; font-family:'Source Sans 3',sans-serif; font-size:13px; border:1px solid var(--line);
+    border-radius:8px; padding:7px 9px; resize:vertical; min-height:36px; background:var(--paper);
+  }
+  .water-btn{
+    background:var(--auto); color:#fff; border:none; border-radius:8px; padding:8px 14px;
+    font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .water-btn:hover{background:#2E5C6A;}
+  .empty-note{font-size:12px; color:var(--ink-soft); font-style:italic;}
+
+  .name-edit{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .name-edit .field{flex:1; min-width:140px;}
+  .name-edit label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600; margin-bottom:4px;}
+  .name-edit input[type=text]{
+    width:100%; font-family:'Source Sans 3',sans-serif; font-size:13.5px; border:1px solid var(--line);
+    border-radius:7px; padding:6px 9px; background:var(--bg); color:var(--ink);
+  }
+  .danger-zone{
+    margin-top:16px; padding-top:12px; border-top:1px dashed var(--line);
+    display:flex; justify-content:flex-end;
+  }
+  .delete-btn{
+    background:var(--overdue-bg); color:var(--overdue); border:1px solid var(--overdue);
+    border-radius:8px; padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .delete-btn:hover{background:var(--overdue); color:#fff;}
+
+  /* MODAL de confirmación propio (los diálogos nativos del navegador no funcionan aquí) */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(27,43,31,0.45);
+    z-index:100; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--paper); border-radius:14px; padding:22px; max-width:340px; width:100%;
+    box-shadow:0 8px 30px rgba(27,43,31,0.25);
+  }
+  .modal-box .modal-title{font-family:'Fraunces',serif; font-weight:600; font-size:18px; margin:0 0 8px; color:var(--moss-dark);}
+  .modal-box .modal-msg{font-size:13.5px; color:var(--ink-soft); line-height:1.5; margin-bottom:18px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px;}
+
+  /* TOAST de aviso, sustituye a alert() */
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--moss-dark); color:#EFEFE6; padding:11px 18px; border-radius:10px;
+    font-size:13px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.25s;
+    z-index:200; max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  footer.app{
+    text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app">
+    <div class="brand">
+      <h1>🌿 Riego Tracker</h1>
+      <div class="sub">Hoy: <b id="todayLabel"></b></div>
+    </div>
+    <div class="head-actions">
+      <button class="btn" id="exportBtn">⬇ Exportar</button>
+      <button class="btn" id="importBtn">⬆ Importar</button>
+      <input type="file" id="importFile" accept="application/json">
+      <button class="btn primary" id="addPlantBtn">➕ Añadir planta</button>
+    </div>
+  </header>
+
+  <div class="saturday-ribbon">
+    <span class="icon">🪣</span>
+    <span class="txt">Todos los riegos se ajustan automáticamente al <b id="nextSaturdayLabel"></b> — tu día de riego.</span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-filter="todas">Todas</button>
+    <button class="tab" data-filter="Interior">Interior</button>
+    <button class="tab" data-filter="Exterior">Exterior</button>
+  </div>
+
+  <div id="groups"></div>
+
+  <footer class="app">Datos guardados en este navegador · usa exportar/importar para backup</footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">¿Eliminar planta?</div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-actions">
+      <button class="btn" id="modalCancelBtn">Cancelar</button>
+      <button class="btn primary" id="modalConfirmBtn" style="background:var(--overdue); border-color:var(--overdue);">Eliminar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+
+<script>
+const STORAGE_KEY = 'javier-riego-history-v1';
+
+const FREQ_DAYS = {
+  '0 Semanal (pulverizar)': 7,
+  '1 Quincenal': 14,
+  '2 Mensual': 30,
+  '3 Bimensual': 60,
+  '4 Riego automatico': null
+};
+const FREQ_LABEL = {
+  '0 Semanal (pulverizar)': 'Semanal',
+  '1 Quincenal': 'Quincenal',
+  '2 Mensual': 'Mensual',
+  '3 Bimensual': 'Bimensual',
+  '4 Riego automatico': 'Riego automático'
+};
+
+const DEFAULT_PLANTS = [
+{id:'aphelandra', real:'Aphelandra squarrosa', apodo:'La Cebra', freq:'0 Semanal (pulverizar)', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'2026-04-07', tip:'Muy sensible a la falta de humedad ambiental.', comentarios:[]},
+{id:'alocasia', real:'Alocasia', apodo:'La de los bulbos', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Estado crítico por exceso de riego previo. Sigue con mechas de papel.', comentarios:[]},
+{id:'poto', real:'Epipremnum aureum', apodo:'El Poto de la columna', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Muy resistente. Deja que cuelgue o guíalo por la columna.', comentarios:[]},
+{id:'monstera', real:'Monstera Deliciosa', apodo:'La Monstera', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Tiene tutor nuevo. Limpiar hojas con paño húmedo. Dejar secar 2-3cm superficiales entre riegos.', comentarios:[]},
+{id:'aglaonema', real:'Aglaonema', apodo:'La del baño', freq:'2 Mensual', fert:'No', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Sustrato renovado recientemente. Ideal para zonas con menos luz. Tolera sequía.', comentarios:[]},
+{id:'sansevieria', real:'Sansevieria', apodo:'La de la hab. / escaleras', freq:'2 Mensual', fert:'No', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'2026-02-27', tip:'No regar hasta mayo tras el trasplante. Muy escaso, 1 vez al mes.', comentarios:[]},
+{id:'dracaena', real:'Dracaena Fragrans', apodo:'La del salón', freq:'2 Mensual', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Sensible al exceso de agua en el tronco. Riego escaso cada 15-20 días.', comentarios:[]},
+{id:'beaucarnea', real:'Beaucarnea', apodo:'La Pata de Elefante', freq:'2 Mensual', fert:'No', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'', tip:'En tratamiento por exceso de riego previo. No regar de más.', comentarios:[]},
+{id:'cycas', real:'Cycas Revoluta', apodo:'La Palmerita', freq:'2 Mensual', fert:'Si', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'2026-04-07', tip:'Nunca sol directo; prefiere sombra.', comentarios:[]},
+{id:'yucca', real:'Yucca Rostrata', apodo:'La de picos', freq:'3 Bimensual', fert:'No', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'', tip:'No mojar el centro de la planta. Riego muy escaso.', comentarios:[]},
+{id:'euphorbia', real:'Euphorbia', apodo:'El Cactus', freq:'3 Bimensual', fert:'No', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Sol total. Riego casi nulo en invierno, escaso en verano.', comentarios:[]},
+{id:'olivo', real:'Olea europaea', apodo:'El Olivo', freq:'4 Riego automatico', fert:'Si', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Maceta blanca grande con arlita.', comentarios:[]},
+{id:'sterlitzia', real:'Sterlitzia Nicolau', apodo:'Ave del paraíso', freq:'4 Riego automatico', fert:'Si', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'', comentarios:[]},
+{id:'bidens', real:'Bidens ferulifolia', apodo:'La amarilla', freq:'4 Riego automatico', fert:'Si', ubicacion:'Exterior', ultimoRiego:'', trasplante:'2026-04-07', tip:'Crecimiento rápido y colgante. Mantener sustrato algo húmedo.', comentarios:[]},
+{id:'menta', real:'Menta', apodo:'Menta', freq:'4 Riego automatico', fert:'Poco', ubicacion:'Exterior', ultimoRiego:'', trasplante:'2026-04-07', tip:'En maceta baja y sola para no invadir. No dejar secar del todo.', comentarios:[]},
+{id:'capsicum', real:'Capsicum annuum', apodo:'Jalapeño / Cayena', freq:'4 Riego automatico', fert:'No', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Pendientes de jardinera grande. Usar Compo Sana y humus. Más riego en floración.', comentarios:[]},
+{id:'lampranthus', real:'Lampranthus aurantiacus', apodo:'Las de colores', freq:'4 Riego automatico', fert:'No', ubicacion:'Exterior', ultimoRiego:'', trasplante:'2026-04-07', tip:'Necesita sol para abrir sus flores. Riego escaso, solo con tierra muy seca.', comentarios:[]},
+{id:'romero', real:'Rosmarinus officinalis', apodo:'Romero', freq:'4 Riego automatico', fert:'', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Grupo mediterráneo. Evitar encharcamientos. Soporta bien la sequía.', comentarios:[]},
+{id:'tomillo', real:'Thymus vulgaris', apodo:'Tomillo', freq:'4 Riego automatico', fert:'', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Grupo mediterráneo. Poda las puntas para que crezca tupido.', comentarios:[]},
+{id:'lavanda', real:'Lavandula', apodo:'Lavanda', freq:'4 Riego automatico', fert:'', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Grupo mediterráneo. Prefiere macetas que transpiren (barro). Dejar secar entre riegos.', comentarios:[]},
+];
+
+let state = null;
+let currentFilter = 'todas';
+let openCards = new Set();
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.error('Error leyendo storage', e); }
+  return { plants: DEFAULT_PLANTS.map(p=>({...p, comentarios:[...p.comentarios]})) };
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function parseDate(s){ if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function fmtDate(d){ if(!d) return '—'; const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${day}/${m}/${y}`; }
+function toISO(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function startOfToday(){ const t=new Date(); t.setHours(0,0,0,0); return t; }
+
+// Ajusta una fecha al sábado siguiente (o el mismo día si ya es sábado)
+function nextSaturday(date){
+  const d = new Date(date); d.setHours(0,0,0,0);
+  const day = d.getDay(); // 0=Dom ... 6=Sab
+  const diff = (6 - day + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function computeNextWatering(plant){
+  const freqDays = FREQ_DAYS[plant.freq];
+  if(freqDays === null || !plant.ultimoRiego) return null;
+  const last = parseDate(plant.ultimoRiego);
+  const raw = new Date(last); raw.setDate(raw.getDate() + freqDays);
+  return nextSaturday(raw);
+}
+
+function statusFor(plant){
+  if(FREQ_DAYS[plant.freq] === null) return 'auto';
+  const next = computeNextWatering(plant);
+  if(!next) return 'ok';
+  const today = startOfToday();
+  const diffDays = Math.round((next - today) / 86400000);
+  if(diffDays < 0) return 'overdue';
+  if(diffDays <= 7) return 'soon';
+  return 'ok';
+}
+
+function waterToday(id){
+  const p = state.plants.find(p=>p.id===id);
+  p.ultimoRiego = toISO(startOfToday());
+  saveState();
+  render();
+}
+
+function updateField(id, field, value){
+  const p = state.plants.find(p=>p.id===id);
+  p[field] = value;
+  saveState();
+}
+
+function addComment(id, text){
+  if(!text.trim()) return;
+  const p = state.plants.find(p=>p.id===id);
+  p.comentarios.unshift({fecha: toISO(startOfToday()), texto: text.trim()});
+  saveState();
+  render();
+}
+function deleteComment(id, idx){
+  const p = state.plants.find(p=>p.id===id);
+  p.comentarios.splice(idx,1);
+  saveState();
+  render();
+}
+
+function cardHTML(p){
+  const status = statusFor(p);
+  const next = computeNextWatering(p);
+  const isOpen = openCards.has(p.id);
+  const freqLabel = FREQ_LABEL[p.freq];
+  const metaHTML = status === 'auto'
+    ? `<div class="meta">automático</div>`
+    : `<div class="meta ${status}"><div class="next-date">→ ${fmtDate(next)}</div></div>`;
+
+  const headWaterBtnHTML = status === 'auto' ? '' :
+    `<button class="water-btn-mini" onclick="event.stopPropagation(); waterToday('${p.id}')">✅ Hoy</button>`;
+
+  const ultimoRiegoHTML = status === 'auto' ? '' :
+    `<div class="row">
+      <span class="field-label">Último riego</span>
+      <input class="date-input" type="date" value="${p.ultimoRiego||''}" onchange="updateField('${p.id}','ultimoRiego',this.value)">
+    </div>`;
+
+  const tipHTML = `<div class="tip-box"><b>Tip experto</b>
+    <textarea placeholder="Añade tu propio tip o consejo..." oninput="autoGrow(this)" onchange="updateField('${p.id}','tip',this.value)">${escapeHtml(p.tip)}</textarea>
+  </div>`;
+
+  const commentsHTML = p.comentarios.map((c,idx)=>`
+    <div class="comment-item">
+      <div><span class="meta-date">${fmtDate(parseDate(c.fecha))}</span>${escapeHtml(c.texto)}</div>
+      <button class="del" onclick="deleteComment('${p.id}', ${idx})" title="Eliminar">✕</button>
+    </div>`).join('') || `<div class="empty-note">Sin comentarios todavía.</div>`;
+
+  return `
+  <div class="card ${isOpen?'open':''}" data-id="${p.id}">
+    <div class="card-head" onclick="toggleCard('${p.id}')">
+      <div class="dot ${status}"></div>
+      <div class="names">
+        <div class="apodo">${escapeHtml(p.apodo)}</div>
+        <div class="real">${escapeHtml(p.real)}</div>
+      </div>
+      ${metaHTML}
+      ${headWaterBtnHTML}
+      <div class="chevron">▶</div>
+    </div>
+    <div class="card-body">
+      <div class="badges">
+        <span class="badge">📍 ${p.ubicacion}</span>
+        <span class="badge">💧 ${freqLabel}</span>
+        <span class="badge">🌱 Fert: ${p.fert || '—'}</span>
+      </div>
+      ${ultimoRiegoHTML}
+      <div class="row">
+        <span class="field-label">Último trasplante</span>
+        <input class="date-input" type="date" value="${p.trasplante||''}" onchange="updateField('${p.id}','trasplante',this.value)">
+      </div>
+      <div class="name-edit">
+        <div class="field">
+          <label>Apodo</label>
+          <input type="text" value="${escapeAttr(p.apodo)}" onchange="updateField('${p.id}','apodo',this.value)">
+        </div>
+        <div class="field">
+          <label>Nombre real</label>
+          <input type="text" value="${escapeAttr(p.real)}" onchange="updateField('${p.id}','real',this.value)">
+        </div>
+      </div>
+      ${tipHTML}
+      <div class="comments">
+        <span class="field-label">Comentarios</span>
+        ${commentsHTML}
+        <div class="comment-add">
+          <textarea placeholder="Añadir nota (ej. trasplantar, hojas amarillas...)" id="newc-${p.id}"></textarea>
+          <button class="btn primary" onclick="addComment('${p.id}', document.getElementById('newc-${p.id}').value); document.getElementById('newc-${p.id}').value='';">Añadir</button>
+        </div>
+      </div>
+      <div class="danger-zone">
+        <button class="delete-btn" onclick="event.stopPropagation(); deletePlant('${p.id}')">🗑 Eliminar planta</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function autoGrow(el){ el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
+
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+function escapeAttr(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function toggleCard(id){
+  if(openCards.has(id)) openCards.delete(id); else openCards.add(id);
+  render();
+}
+
+function deletePlant(id){
+  const p = state.plants.find(p=>p.id===id);
+  if(!p) return;
+  showConfirm(
+    `¿Eliminar "${p.apodo}" (${p.real})? Esta acción no se puede deshacer.`,
+    ()=>{
+      state.plants = state.plants.filter(pl=>pl.id!==id);
+      openCards.delete(id);
+      saveState();
+      render();
+      showToast(`"${p.apodo}" eliminada.`);
+    }
+  );
+}
+
+function addPlant(){
+  const id = 'p' + Date.now();
+  const newPlant = {
+    id, real:'Nueva planta', apodo:'Sin nombre', freq:'1 Quincenal', fert:'No',
+    ubicacion:'Interior', ultimoRiego: toISO(startOfToday()), trasplante:'', tip:'', comentarios:[]
+  };
+  state.plants.push(newPlant);
+  openCards.add(id);
+  saveState();
+  render();
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function render(){
+  const filtered = state.plants.filter(p => currentFilter==='todas' || p.ubicacion===currentFilter);
+  const overdue = filtered.filter(p=>statusFor(p)==='overdue');
+  const soon = filtered.filter(p=>statusFor(p)==='soon');
+  const ok = filtered.filter(p=>statusFor(p)==='ok');
+  const auto = filtered.filter(p=>statusFor(p)==='auto');
+
+  const groupsEl = document.getElementById('groups');
+  let html = '';
+
+  if(overdue.length){
+    html += `<div class="group"><div class="group-title overdue">🔴 Vencidas <span class="count">${overdue.length}</span></div>${overdue.map(cardHTML).join('')}</div>`;
+  }
+  if(soon.length){
+    html += `<div class="group"><div class="group-title soon">🟡 Próximo sábado <span class="count">${soon.length}</span></div>${soon.map(cardHTML).join('')}</div>`;
+  }
+  if(ok.length){
+    html += `<div class="group"><div class="group-title ok">🟢 Al día <span class="count">${ok.length}</span></div>${ok.map(cardHTML).join('')}</div>`;
+  }
+  if(auto.length){
+    html += `<div class="group"><div class="group-title auto">💧 Riego automático <span class="count">${auto.length}</span></div>${auto.map(cardHTML).join('')}</div>`;
+  }
+  if(!filtered.length){
+    html = `<div class="empty-note">No hay plantas en este filtro.</div>`;
+  }
+
+  groupsEl.innerHTML = html;
+}
+
+// Header labels
+function renderHeader(){
+  const today = startOfToday();
+  document.getElementById('todayLabel').textContent = fmtDate(today);
+  document.getElementById('nextSaturdayLabel').textContent = fmtDate(nextSaturday(today));
+}
+
+// Tabs
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  if(e.target.classList.contains('tab')){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFilter = e.target.dataset.filter;
+    render();
+  }
+});
+
+// Export / Import
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `riego-backup-${toISO(startOfToday())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const data = JSON.parse(evt.target.result);
+      if(data && Array.isArray(data.plants)){
+        state = data;
+        saveState();
+        render();
+        showToast('Datos importados correctamente.');
+      } else {
+        showToast('El archivo no tiene el formato esperado.');
+      }
+    }catch(err){
+      showToast('No se pudo leer el archivo JSON.');
+    }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('addPlantBtn').addEventListener('click', addPlant);
+
+// Modal de confirmación
+const modalOverlay = document.getElementById('modalOverlay');
+const modalMsg = document.getElementById('modalMsg');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+const modalCancelBtn = document.getElementById('modalCancelBtn');
+let pendingConfirmAction = null;
+
+function showConfirm(message, onConfirm){
+  modalMsg.textContent = message;
+  pendingConfirmAction = onConfirm;
+  modalOverlay.classList.add('open');
+}
+function closeModal(){
+  modalOverlay.classList.remove('open');
+  pendingConfirmAction = null;
+}
+modalConfirmBtn.addEventListener('click', ()=>{
+  if(pendingConfirmAction) pendingConfirmAction();
+  closeModal();
+});
+modalCancelBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) closeModal(); });
+
+// Toast de aviso
+let toastTimer = null;
+function showToast(message){
+  const t = document.getElementById('toast');
+  t.textContent = message;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+// Init
+state = loadState();
+renderHeader();
+render();
+</script>
+</body>
+</html>
