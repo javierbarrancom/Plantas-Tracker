@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riego Tracker · Diario de plantas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F5EE;
+    --paper:#FFFFFF;
+    --ink:#1B2B1F;
+    --ink-soft:#4B5A4E;
+    --line:#DCE1D2;
+    --moss:#3A5A40;
+    --moss-dark:#243A28;
+    --sage:#6B8F71;
+    --sage-light:#E7EEE3;
+    --overdue:#B23A2E;
+    --overdue-bg:#F7E6E3;
+    --soon:#B8862B;
+    --soon-bg:#FBF0D9;
+    --ok-bg:#E7EEE3;
+    --auto:#3E7686;
+    --auto-bg:#E2EEF1;
+    --shadow: 0 1px 2px rgba(27,43,31,0.06), 0 4px 12px rgba(27,43,31,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:28px 18px 40px;}
+
+  /* HEADER */
+  header.app{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; margin-bottom:22px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); padding-bottom:18px;
+  }
+  .brand h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:30px;
+    margin:0 0 4px; color:var(--moss-dark); letter-spacing:-0.01em;
+  }
+  .brand .sub{ font-size:13.5px; color:var(--ink-soft); }
+  .brand .sub b{ color:var(--moss); font-family:'IBM Plex Mono',monospace; font-weight:500;}
+  .head-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .btn{
+    font-family:'Source Sans 3',sans-serif; font-size:13px; font-weight:600;
+    border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    padding:8px 13px; border-radius:8px; cursor:pointer; transition:.15s;
+  }
+  .btn:hover{border-color:var(--sage); background:var(--sage-light);}
+  .btn.primary{background:var(--moss); border-color:var(--moss); color:#fff;}
+  .btn.primary:hover{background:var(--moss-dark);}
+  .btn:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{
+    outline:2px solid var(--moss); outline-offset:2px;
+  }
+  input[type=file]{display:none;}
+
+  /* RIBBON */
+  .saturday-ribbon{
+    display:flex; align-items:center; gap:12px; margin-bottom:24px;
+    background:var(--moss-dark); color:#EFEFE6; border-radius:12px;
+    padding:14px 18px; box-shadow:var(--shadow);
+  }
+  .saturday-ribbon .icon{font-size:20px;}
+  .saturday-ribbon .txt{font-size:13.5px; line-height:1.4;}
+  .saturday-ribbon b{font-family:'IBM Plex Mono',monospace; color:#C9E4B8;}
+
+  /* TABS */
+  .tabs{display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap;}
+  .tab{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; padding:6px 12px;
+    border-radius:20px; border:1px solid var(--line); background:var(--paper);
+    cursor:pointer; color:var(--ink-soft);
+  }
+  .tab.active{background:var(--moss); border-color:var(--moss); color:#fff;}
+
+  /* GROUP */
+  .group{margin-bottom:26px;}
+  .group-title{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; margin:0 0 10px 2px;
+  }
+  .group-title .count{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:1px 7px;
+    border-radius:10px; background:var(--line); color:var(--ink);
+  }
+  .group-title .group-btn{
+    margin-left:auto; text-transform:none; letter-spacing:0; font-size:12px; padding:5px 11px;
+    background:var(--moss); border-color:var(--moss); color:#fff;
+  }
+  .group-title .group-btn:hover{background:var(--moss-dark);}
+  .group-title.overdue{color:var(--overdue);}
+  .group-title.soon{color:var(--soon);}
+  .group-title.ok{color:var(--moss);}
+  .group-title.auto{color:var(--auto);}
+
+  /* TEMPORADA */
+  .dot.esperar{background:var(--soon);}
+  .season-bar{display:flex; align-items:center; gap:8px; margin:-8px 0 16px; font-size:12.5px; color:var(--ink-soft); flex-wrap:wrap;}
+  .season-bar label{font-weight:600; text-transform:uppercase; letter-spacing:.05em; font-size:11px;}
+  .season-bar #seasonInfo{font-family:'IBM Plex Mono',monospace; font-size:11.5px;}
+
+  /* ZONAS DEL MEDIDOR */
+  .chip{
+    display:inline-block; min-width:22px; text-align:center; font-family:'IBM Plex Mono',monospace;
+    font-size:12px; font-weight:600; padding:1px 6px; border-radius:6px; margin-right:2px;
+  }
+  .z-dry{background:var(--overdue-bg); color:var(--overdue);}
+  .z-mid{background:var(--ok-bg); color:var(--moss);}
+  .z-wet{background:var(--auto-bg); color:var(--auto);}
+
+  /* CARD */
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    margin-bottom:9px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .card-head{
+    display:flex; align-items:center; gap:10px; padding:13px 15px; cursor:pointer;
+  }
+  .card-head .dot{
+    width:9px; height:9px; border-radius:50%; flex-shrink:0;
+  }
+  .dot.regar{background:var(--overdue);}
+  .dot.pendiente{background:var(--auto);}
+  .dot.medir{background:var(--soon);}
+  .dot.ok{background:var(--sage);}
+  .dot.auto{background:var(--auto);}
+  .card-head .names{flex:1; min-width:0;}
+  .card-head .apodo{font-family:'Fraunces',serif; font-weight:600; font-size:16.5px; color:var(--ink);}
+  .card-head .real{font-size:12px; color:var(--ink-soft); font-style:italic;}
+  .card-head .meta{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);
+    text-align:right; flex-shrink:0; line-height:1.5;
+  }
+  .card-head .meta .next-date{font-weight:600;}
+  .card-head .meta.regar .next-date{color:var(--overdue);}
+  .card-head .meta.soon .next-date{color:var(--soon);}
+  .card-head .meta.pend .next-date{color:var(--auto);}
+  .water-btn-mini, .measure-btn-mini{
+    border:none; border-radius:7px; padding:6px 10px;
+    font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .water-btn-mini{background:var(--auto); color:#fff;}
+  .water-btn-mini:hover{background:#2E5C6A;}
+  .measure-btn-mini{background:var(--sage-light); color:var(--moss-dark); border:1px solid var(--line);}
+  .measure-btn-mini:hover{background:var(--line);}
+  .card-head .chevron{color:var(--ink-soft); font-size:12px; flex-shrink:0; transition:.15s;}
+  .card.open .chevron{transform:rotate(90deg);}
+
+  .card-body{display:none; padding:0 15px 16px; border-top:1px solid var(--line);}
+  .card.open .card-body{display:block;}
+  .badges{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px;}
+  .badge{
+    font-size:11px; font-family:'IBM Plex Mono',monospace; padding:3px 8px;
+    border-radius:6px; background:var(--sage-light); color:var(--moss-dark);
+  }
+  .warn-box{
+    margin-top:10px; background:var(--soon-bg); color:#6E4F10; border-radius:8px;
+    padding:8px 11px; font-size:12.5px; line-height:1.45;
+  }
+  .warn-box.red{background:var(--overdue-bg); color:var(--overdue);}
+  .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .stats{
+    margin-top:12px; font-size:12.5px; line-height:1.6; color:var(--ink-soft);
+    background:var(--bg); border-radius:8px; padding:9px 11px;
+  }
+  .stats b{color:var(--ink); font-family:'IBM Plex Mono',monospace; font-weight:500;}
+  .spark{margin-top:12px;}
+  .spark svg{width:100%; height:auto; display:block; background:var(--bg); border-radius:8px;}
+  .spark-cap{font-size:11px; color:var(--ink-soft); margin-top:4px;}
+  .sp-line{fill:none; stroke:var(--ink-soft); stroke-width:1.5;}
+  .sp-th{stroke:var(--overdue); stroke-dasharray:4 3; stroke-width:1;}
+  .sp-dot.dry{fill:var(--overdue);}
+  .sp-dot.mid{fill:var(--sage);}
+  .sp-dot.wet{fill:var(--auto);}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap;}
+  .field-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .field-value{font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  .date-input, .sel{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; border:1px solid var(--line);
+    border-radius:6px; padding:4px 6px; background:var(--bg); color:var(--ink);
+  }
+  .check-label{font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px; cursor:pointer;}
+  details.hist{margin-top:12px; font-size:12.5px;}
+  details.hist summary{cursor:pointer; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  details.hist .hist-list{margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.7; color:var(--ink);}
+  details.hist .hist-title{margin-top:8px; font-family:'Source Sans 3',sans-serif; font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase;}
+  .tip-box{
+    margin-top:12px; background:var(--sage-light); border-radius:8px; padding:10px 12px;
+  }
+  .tip-box b{font-size:11px; text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:5px; color:var(--moss);}
+  .tip-box textarea{
+    width:100%; border:none; background:transparent; resize:vertical; min-height:38px;
+    font-family:'Source Sans 3',sans-serif; font-size:13px; line-height:1.5; color:var(--moss-dark);
+    padding:0;
+  }
+  .tip-box textarea:focus{outline:none;}
+  .comments{margin-top:12px;}
+  .comments .field-label{margin-bottom:6px; display:block;}
+  .comment-item{
+    background:var(--bg); border-radius:8px; padding:8px 10px; margin-bottom:6px;
+    font-size:13px; line-height:1.4; display:flex; justify-content:space-between; gap:8px;
+  }
+  .comment-item .meta-date{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); display:block; margin-bottom:2px;}
+  .comment-item .del{background:none; border:none; color:var(--overdue); cursor:pointer; font-size:14px; flex-shrink:0;}
+  .comment-add{display:flex; gap:6px; margin-top:6px;}
+  .comment-add textarea{
+    flex:1; font-family:'Source Sans 3',sans-serif; font-size:13px; border:1px solid var(--line);
+    border-radius:8px; padding:7px 9px; resize:vertical; min-height:36px; background:var(--paper);
+  }
+  .water-btn{
+    background:var(--auto); color:#fff; border:none; border-radius:8px; padding:8px 14px;
+    font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .water-btn:hover{background:#2E5C6A;}
+  .empty-note{font-size:12px; color:var(--ink-soft); font-style:italic;}
+
+  .name-edit{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .name-edit .field{flex:1; min-width:140px;}
+  .name-edit label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600; margin-bottom:4px;}
+  .name-edit input[type=text]{
+    width:100%; font-family:'Source Sans 3',sans-serif; font-size:13.5px; border:1px solid var(--line);
+    border-radius:7px; padding:6px 9px; background:var(--bg); color:var(--ink);
+  }
+  .danger-zone{
+    margin-top:16px; padding-top:12px; border-top:1px dashed var(--line);
+    display:flex; justify-content:flex-end;
+  }
+  .delete-btn{
+    background:var(--overdue-bg); color:var(--overdue); border:1px solid var(--overdue);
+    border-radius:8px; padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .delete-btn:hover{background:var(--overdue); color:#fff;}
+
+  /* MODALES propios (los diálogos nativos del navegador no funcionan aquí) */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(27,43,31,0.45);
+    z-index:100; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--paper); border-radius:14px; padding:22px; max-width:360px; width:100%;
+    box-shadow:0 8px 30px rgba(27,43,31,0.25);
+  }
+  .modal-box .modal-title{font-family:'Fraunces',serif; font-weight:600; font-size:18px; margin:0 0 8px; color:var(--moss-dark);}
+  .modal-box .modal-msg{font-size:13.5px; color:var(--ink-soft); line-height:1.5; margin-bottom:16px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;}
+  .read-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px;}
+  .read-grid button{
+    font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:600; padding:12px 0;
+    border-radius:10px; border:1px solid transparent; cursor:pointer;
+  }
+  .read-grid button.z-dry{border-color:var(--overdue);}
+  .read-grid button.z-mid{border-color:var(--sage);}
+  .read-grid button.z-wet{border-color:var(--auto);}
+  .read-grid button:hover{filter:brightness(.94);}
+  .read-grid button:active{transform:scale(.96);}
+  .read-legend{display:flex; justify-content:space-between; font-size:11px; font-family:'IBM Plex Mono',monospace; margin-bottom:16px;}
+  .read-legend span{padding:1px 6px; border-radius:5px;}
+
+  /* TOAST */
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--moss-dark); color:#EFEFE6; padding:11px 18px; border-radius:10px;
+    font-size:13px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.25s;
+    z-index:200; max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  footer.app{
+    text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app">
+    <div class="brand">
+      <h1>🌿 Riego Tracker</h1>
+      <div class="sub">Hoy: <b id="todayLabel"></b></div>
+    </div>
+    <div class="head-actions">
+      <button class="btn" id="rainBtn">🌧 Llovió</button>
+      <button class="btn" id="exportBtn">⬇ Exportar</button>
+      <button class="btn" id="importBtn">⬆ Importar</button>
+      <input type="file" id="importFile" accept="application/json">
+      <button class="btn primary" id="addPlantBtn">➕ Añadir planta</button>
+    </div>
+  </header>
+
+  <div class="saturday-ribbon">
+    <span class="icon">📏</span>
+    <span class="txt" id="ribbonTxt"></span>
+  </div>
+
+  <div class="season-bar">
+    <label for="seasonSel">Temporada</label>
+    <select class="sel" id="seasonSel"></select>
+    <span id="seasonInfo"></span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-filter="todas">Todas</button>
+    <button class="tab" data-filter="Interior">Interior</button>
+    <button class="tab" data-filter="Exterior">Exterior</button>
+  </div>
+
+  <div id="groups"></div>
+
+  <footer class="app">Datos guardados en este navegador · medidor de sonda 1-10 · usa exportar/importar para backup</footer>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">¿Eliminar planta?</div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-actions">
+      <button class="btn" id="modalCancelBtn">Cancelar</button>
+      <button class="btn primary" id="modalConfirmBtn" style="background:var(--overdue); border-color:var(--overdue);">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de lectura del medidor -->
+<div class="modal-overlay" id="readOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="readTitle"></div>
+    <div class="modal-msg" id="readMsg"></div>
+    <div class="read-grid" id="readGrid"></div>
+    <div class="read-legend">
+      <span class="z-dry">1-3 seco</span><span class="z-mid">4-7 húmedo</span><span class="z-wet">8-10 mojado</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="readSkipBtn">Saltar</button>
+      <button class="btn" id="readCancelBtn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+const STORAGE_KEY = 'javier-riego-history-v1'; // misma clave: los datos anteriores se migran solos
+const DAY = 86400000;
+const PENDING_MAX_MS = 48 * 3600000;   // lectura posterior pendiente caduca a las 48 h
+const POST_WAIT_MIN = 10;              // minutos de espera recomendados tras regar
+const MIN_WAIT_FRAC = 0.7;             // espera mínima entre riegos = 70 % de la frecuencia
+const SEASON_FACTOR = {invierno:1.5, normal:1, verano:0.8};
+const SEASON_LABEL = {invierno:'Invierno', normal:'Primavera/otoño', verano:'Verano'};
+const REUSE_PREVIA_MS = 6 * 3600000;   // si hay lectura de hace < 6 h, se usa como "previa"
+
+const FREQ_DAYS = {
+  '0 Semanal (pulverizar)': 7,
+  '1 Quincenal': 14,
+  '2 Mensual': 30,
+  '3 Bimensual': 60,
+  '4 Riego automatico': null
+};
+const FREQ_LABEL = {
+  '0 Semanal (pulverizar)': 'Semanal',
+  '1 Quincenal': 'Quincenal',
+  '2 Mensual': 'Mensual',
+  '3 Bimensual': 'Bimensual',
+  '4 Riego automatico': 'Riego automático'
+};
+
+// Umbral inicial (regar si la lectura es ≤ umbral) y profundidad de lectura por planta
+const MEDIDOR_DEFAULTS = {
+  aphelandra:  {umbral:4, prof:'Mitad'},
+  alocasia:    {umbral:3, prof:'Mitad'},
+  poto:        {umbral:3, prof:'Mitad'},
+  'monstera-p':    {umbral:3, prof:'Mitad'},
+  'monstera-g':    {umbral:3, prof:'Mitad'},
+  'sansevieria-p': {umbral:2, prof:'Fondo'},
+  'sansevieria-g': {umbral:2, prof:'Fondo'},
+  dracaena:    {umbral:3, prof:'Mitad'},
+  beaucarnea:  {umbral:2, prof:'Fondo'},
+  cycas:       {umbral:2, prof:'Fondo'},
+  yucca:       {umbral:2, prof:'Fondo'},
+  euphorbia:   {umbral:2, prof:'Fondo'},
+  olivo:       {umbral:2, prof:'Fondo'},
+  sterlitzia:  {umbral:3, prof:'Mitad'},
+  bidens:      {umbral:4, prof:'Mitad'},
+  capsicum:    {umbral:4, prof:'Mitad'},
+  lampranthus: {umbral:2, prof:'Mitad'}
+};
+// Sustratos muy drenantes / arlita: la sonda suele marcar "seco" aunque no lo esté
+const LECTURA_DUDOSA = new Set(['sansevieria-p','sansevieria-g','yucca','euphorbia','beaucarnea','olivo']);
+
+const DEFAULT_PLANTS = [
+{id:'aphelandra', real:'Aphelandra squarrosa', apodo:'La Cebra', freq:'0 Semanal (pulverizar)', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'2026-04-07', tip:'Muy sensible a la falta de humedad ambiental.', comentarios:[]},
+{id:'alocasia', real:'Alocasia', apodo:'La de los bulbos', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Estado crítico por exceso de riego previo. Sigue con mechas de papel.', comentarios:[]},
+{id:'poto', real:'Epipremnum aureum', apodo:'El Poto de la columna', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Muy resistente. Deja que cuelgue o guíalo por la columna.', comentarios:[]},
+{id:'monstera-p', real:'Monstera Deliciosa', apodo:'La Monstera pequeña', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Tiene tutor nuevo. Limpiar hojas con paño húmedo. Dejar secar 2-3cm superficiales entre riegos.', comentarios:[]},
+{id:'monstera-g', real:'Monstera Deliciosa', apodo:'La Monstera grande', freq:'1 Quincenal', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Tiene tutor nuevo. Limpiar hojas con paño húmedo. Dejar secar 2-3cm superficiales entre riegos.', comentarios:[]},
+{id:'sansevieria-p', real:'Sansevieria pequeña', apodo:'La de las escaleras pequeña', freq:'2 Mensual', fert:'No', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'2026-02-27', tip:'No regar hasta mayo tras el trasplante. Muy escaso, 1 vez al mes.', comentarios:[]},
+{id:'sansevieria-g', real:'Sansevieria grande', apodo:'La de las escaleras grande', freq:'2 Mensual', fert:'No', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'2026-02-27', tip:'No regar hasta mayo tras el trasplante. Muy escaso, 1 vez al mes.', comentarios:[]},
+{id:'dracaena', real:'Dracaena Fragrans', apodo:'La del salón', freq:'2 Mensual', fert:'Si', ubicacion:'Interior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Sensible al exceso de agua en el tronco. Riego escaso cada 15-20 días.', comentarios:[]},
+{id:'beaucarnea', real:'Beaucarnea', apodo:'La Pata de Elefante', freq:'2 Mensual', fert:'No', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'', tip:'En tratamiento por exceso de riego previo. No regar de más.', comentarios:[]},
+{id:'cycas', real:'Cycas Revoluta', apodo:'La Palmerita', freq:'2 Mensual', fert:'Si', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'2026-04-07', tip:'Nunca sol directo; prefiere sombra.', comentarios:[]},
+{id:'yucca', real:'Yucca Rostrata', apodo:'La de picos', freq:'3 Bimensual', fert:'No', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'', tip:'No mojar el centro de la planta. Riego muy escaso.', comentarios:[]},
+{id:'euphorbia', real:'Euphorbia', apodo:'El Cactus', freq:'3 Bimensual', fert:'No', ubicacion:'Exterior', ultimoRiego:'2026-08-15', trasplante:'', tip:'Sol total. Riego casi nulo en invierno, escaso en verano.', comentarios:[]},
+{id:'olivo', real:'Olea europaea', apodo:'El Olivo', freq:'4 Riego automatico', fert:'Si', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Maceta blanca grande con arlita.', comentarios:[]},
+{id:'sterlitzia', real:'Sterlitzia Nicolau', apodo:'Ave del paraíso', freq:'4 Riego automatico', fert:'Si', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'', comentarios:[]},
+{id:'bidens', real:'Bidens ferulifolia', apodo:'La amarilla', freq:'4 Riego automatico', fert:'Si', ubicacion:'Exterior', ultimoRiego:'', trasplante:'2026-04-07', tip:'Crecimiento rápido y colgante. Mantener sustrato algo húmedo.', comentarios:[]},
+{id:'capsicum', real:'Capsicum annuum', apodo:'Jalapeño / Cayena', freq:'4 Riego automatico', fert:'No', ubicacion:'Exterior', ultimoRiego:'', trasplante:'', tip:'Pendientes de jardinera grande. Usar Compo Sana y humus. Más riego en floración.', comentarios:[]},
+{id:'lampranthus', real:'Lampranthus aurantiacus', apodo:'Las de colores', freq:'4 Riego automatico', fert:'No', ubicacion:'Exterior', ultimoRiego:'', trasplante:'2026-04-07', tip:'Necesita sol para abrir sus flores. Riego escaso, solo con tierra muy seca.', comentarios:[]},
+];
+
+let state = null;
+let currentFilter = 'todas';
+let openCards = new Set();
+
+/* ---------- Fechas ---------- */
+function parseDate(s){ if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function fmtDate(d){ if(!d) return '—'; const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${day}/${m}/${y}`; }
+function fmtShort(d){ if(!d) return '—'; return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
+function fmtTime(ts){ return new Date(ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}); }
+function toISO(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function startOfToday(){ const t=new Date(); t.setHours(0,0,0,0); return t; }
+function daysBetween(a,b){ return Math.round((b-a)/DAY); }
+function ago(iso){
+  const n = daysBetween(parseDate(iso), startOfToday());
+  if(n<=0) return 'hoy';
+  if(n===1) return 'ayer';
+  return `hace ${n} d`;
+}
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+
+// Fecha ajustada al sábado siguiente (o el mismo día si ya es sábado)
+function nextSaturday(date){
+  const d = new Date(date); d.setHours(0,0,0,0);
+  const diff = (6 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+/* ---------- Estado y migración ---------- */
+function normalizePlant(p){
+  const d = MEDIDOR_DEFAULTS[p.id] || {umbral:3, prof:'Mitad'};
+  if(typeof p.umbral !== 'number' || isNaN(p.umbral)) p.umbral = d.umbral;
+  if(p.profundidad !== 'Mitad' && p.profundidad !== 'Fondo') p.profundidad = d.prof;
+  if(typeof p.lecturaDudosa !== 'boolean') p.lecturaDudosa = LECTURA_DUDOSA.has(p.id);
+  if(typeof p.esperaMin !== 'number' || isNaN(p.esperaMin) || p.esperaMin < 0) p.esperaMin = null;
+  if(!Array.isArray(p.lecturas)) p.lecturas = [];
+  if(!Array.isArray(p.riegos)) p.riegos = [];
+  if(!Array.isArray(p.comentarios)) p.comentarios = [];
+  if(p.tip == null) p.tip = '';
+  if(p.trasplante == null) p.trasplante = '';
+  if(p.ultimoRiego == null) p.ultimoRiego = '';
+  // Riego anterior al medidor: se conserva como histórico, pero no cuenta para estimar secados
+  if(!p.riegos.length && p.ultimoRiego){
+    const d0 = parseDate(p.ultimoRiego);
+    if(d0){ d0.setHours(12); p.riegos.push({fecha:p.ultimoRiego, ts:d0.getTime(), previa:null, posterior:null, legacy:true}); }
+  }
+  if(p.pendiente && (!p.pendiente.ts || Date.now() - p.pendiente.ts > PENDING_MAX_MS)) p.pendiente = null;
+  if(!p.pendiente) p.pendiente = null;
+  p.lecturas.sort((a,b)=>b.ts-a.ts);
+  p.riegos.sort((a,b)=>b.ts-a.ts);
+  return p;
+}
+// v3: quita plantas eliminadas y divide Sansevieria y Monstera en pequeña/grande (historial propio)
+function migrateV3(st){
+  const REMOVE = new Set(['romero','tomillo','lavanda','menta','aglaonema']);
+  const SPLITS = {
+    sansevieria: [
+      {id:'sansevieria-p', real:'Sansevieria pequeña', apodo:'La de las escaleras pequeña'},
+      {id:'sansevieria-g', real:'Sansevieria grande',  apodo:'La de las escaleras grande'}
+    ],
+    monstera: [
+      {id:'monstera-p', real:'Monstera Deliciosa', apodo:'La Monstera pequeña'},
+      {id:'monstera-g', real:'Monstera Deliciosa', apodo:'La Monstera grande'}
+    ]
+  };
+  const out = [];
+  st.plants.filter(p=>!REMOVE.has(p.id)).forEach(p=>{
+    const parts = SPLITS[p.id];
+    if(!parts){ out.push(p); return; }
+    parts.forEach(part=>{
+      const c = JSON.parse(JSON.stringify(p));
+      Object.assign(c, part, {lecturas:[], riegos:[], pendiente:null});
+      out.push(c);
+    });
+  });
+  st.plants = out;
+}
+function normalizeState(st){
+  if(!st.v || st.v < 3) migrateV3(st);
+  if(!['auto','invierno','normal','verano'].includes(st.estacion)) st.estacion = 'auto';
+  st.plants = st.plants.map(normalizePlant);
+  st.v = 3;
+  return st;
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const st = JSON.parse(raw);
+      if(st && Array.isArray(st.plants)) return normalizeState(st);
+    }
+  }catch(e){ console.error('Error leyendo storage', e); }
+  return normalizeState({ plants: DEFAULT_PLANTS.map(p=>({...p, comentarios:[...p.comentarios]})) });
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('Error guardando', e); showToast('No se pudo guardar en el navegador.'); }
+}
+function getPlant(id){ return state.plants.find(p=>p.id===id); }
+
+/* ---------- Lógica de humedad ---------- */
+function isAuto(p){ return FREQ_DAYS[p.freq] === null; }
+function zone(v){ return v<=3 ? 'dry' : (v<=7 ? 'mid' : 'wet'); }
+function lastReading(p){ return p.lecturas.length ? p.lecturas[0] : null; }
+
+// Temporada: automática por fecha (nov-mar invierno, jun-ago verano) o forzada con el selector
+function seasonAuto(d){
+  const m = (d || new Date()).getMonth(); // 0 = enero
+  if(m >= 10 || m <= 2) return 'invierno';
+  if(m >= 5 && m <= 7) return 'verano';
+  return 'normal';
+}
+function currentSeason(){
+  const e = state && state.estacion;
+  return (e && e !== 'auto') ? e : seasonAuto();
+}
+function minWaitAuto(p){
+  const f = FREQ_DAYS[p.freq];
+  if(f == null) return null;
+  return Math.round(f * MIN_WAIT_FRAC * SEASON_FACTOR[currentSeason()]);
+}
+// Si la planta tiene un valor fijo, se usa tal cual (sin factor de temporada)
+function minWait(p){
+  if(isAuto(p)) return null;
+  return (typeof p.esperaMin === 'number') ? p.esperaMin : minWaitAuto(p);
+}
+function waitUntil(p){
+  const n = minWait(p);
+  if(n == null || !p.ultimoRiego) return null;
+  const d = parseDate(p.ultimoRiego);
+  return d ? addDays(d, n) : null;
+}
+
+// Ciclos de secado: días desde un riego hasta la primera lectura ≤ umbral (antes del siguiente riego)
+function dryingCycles(p){
+  const rs = [...p.riegos].sort((a,b)=>a.ts-b.ts);
+  const out = [];
+  rs.forEach((r,i)=>{
+    if(r.legacy) return;
+    const end = rs[i+1] ? rs[i+1].ts : Infinity;
+    const hit = p.lecturas
+      .filter(l=>l.tipo!=='posterior' && l.ts>r.ts && l.ts<end && l.valor<=p.umbral)
+      .sort((a,b)=>a.ts-b.ts)[0];
+    if(hit){
+      const days = (hit.ts - r.ts) / DAY;
+      if(days >= 0.5) out.push(days);
+    }
+  });
+  return out;
+}
+// Solo cuentan los ciclos más recientes: así la estimación se adapta a la estación
+const RECENT_CYCLES = 3;
+function avgDrying(p){
+  const all = dryingCycles(p);
+  if(!all.length) return null;
+  const c = all.slice(-RECENT_CYCLES);
+  return { avg: c.reduce((a,b)=>a+b,0)/c.length, n: c.length, total: all.length };
+}
+// Cada cuántos días conviene medir esta planta
+function cadenceDays(p){
+  const st = avgDrying(p);
+  if(st && st.n >= 2){
+    const weeks = Math.min(3, Math.max(1, Math.round(st.avg/3/7)));
+    return weeks * 7;
+  }
+  const ref = FREQ_DAYS[p.freq];
+  return (ref && ref > 14) ? 14 : 7;
+}
+function nextMeasure(p){
+  const l = lastReading(p);
+  if(!l) return null;
+  return nextSaturday(addDays(parseDate(l.fecha), cadenceDays(p)));
+}
+function isDue(p){
+  const l = lastReading(p);
+  if(!l) return true;
+  const today = startOfToday();
+  const nm = nextMeasure(p);
+  if(nm && nm <= today) return true;
+  // Referencia suave: si ha pasado la frecuencia antigua desde el último riego y la lectura tiene ≥3 días
+  const ref = FREQ_DAYS[p.freq];
+  if(ref && p.ultimoRiego){
+    const sinceWater = daysBetween(parseDate(p.ultimoRiego), today);
+    const sinceRead = daysBetween(parseDate(l.fecha), today);
+    if(sinceWater >= ref && sinceRead >= 3) return true;
+  }
+  return false;
+}
+function statusFor(p){
+  if(isAuto(p)) return 'auto';
+  if(p.pendiente) return 'pendiente';
+  const l = lastReading(p);
+  if(l && l.valor <= p.umbral){
+    const wu = waitUntil(p);
+    return (wu && startOfToday() < wu) ? 'esperar' : 'regar';
+  }
+  if(isDue(p)) return 'medir';
+  return 'ok';
+}
+
+/* ---------- Acciones ---------- */
+function addReading(p, valor, tipo, tsOverride){
+  const ts = tsOverride || Date.now();
+  const r = { fecha: toISO(new Date(ts)), ts, valor, tipo };
+  p.lecturas.unshift(r);
+  p.lecturas.sort((a,b)=>b.ts-a.ts);
+  if(p.lecturas.length > 300) p.lecturas.length = 300;
+  return r;
+}
+function saveReading(id, valor, tipo){
+  const p = getPlant(id); if(!p) return;
+  addReading(p, valor, tipo);
+  saveState();
+  render();
+  if(!isAuto(p) && valor <= p.umbral){
+    if(statusFor(p) === 'esperar') showToast(`${p.apodo}: lectura ${valor}, pero la regaste hace poco: espera hasta el ${fmtShort(waitUntil(p))}.`);
+    else showToast(`${p.apodo}: lectura ${valor} (≤ ${p.umbral}) → toca regar.`);
+  } else if(isAuto(p) && valor <= p.umbral){
+    showToast(`${p.apodo}: lectura baja, revisa el riego automático.`);
+  } else {
+    showToast(`${p.apodo}: lectura ${valor} guardada.`);
+  }
+}
+function registerWatering(id, previaValor, reused){
+  const p = getPlant(id); if(!p) return;
+  const ts = Date.now();
+  if(previaValor != null && !reused) addReading(p, previaValor, 'previa', ts - 1);
+  p.riegos.unshift({ fecha: toISO(new Date(ts)), ts, previa: previaValor, posterior: null });
+  p.riegos.sort((a,b)=>b.ts-a.ts);
+  p.ultimoRiego = toISO(new Date(ts));
+  p.pendiente = { ts };
+  saveState();
+  render();
+  showToast(`${p.apodo} regada. Lectura posterior a partir de las ${fmtTime(ts + POST_WAIT_MIN*60000)}.`);
+}
+function savePosterior(id, valor){
+  const p = getPlant(id); if(!p) return;
+  addReading(p, valor, 'posterior');
+  const riego = (p.pendiente && p.riegos.find(r=>r.ts===p.pendiente.ts)) || p.riegos[0];
+  if(riego) riego.posterior = valor;
+  p.pendiente = null;
+  saveState();
+  render();
+  if(valor <= p.umbral) showToast(`${p.apodo}: sigue baja (${valor}). Puede faltar agua o la sonda no llega bien.`);
+  else showToast(`${p.apodo}: lectura posterior ${valor} guardada.`);
+}
+function skipPending(id){
+  const p = getPlant(id); if(!p) return;
+  p.pendiente = null;
+  saveState();
+  render();
+}
+
+function startWatering(id){
+  const p = getPlant(id); if(!p) return;
+  const l = lastReading(p);
+  const lastRiego = p.riegos[0];
+  const reuse = l && l.tipo !== 'posterior' && (Date.now() - l.ts) < REUSE_PREVIA_MS && (!lastRiego || l.ts > lastRiego.ts);
+  if(reuse){ registerWatering(id, l.valor, true); return; }
+  openReading({
+    title: `Lectura previa · ${p.apodo}`,
+    msg: `Mide antes de regar (${p.profundidad.toLowerCase()} de la maceta).`,
+    skipLabel: 'Regar sin lectura',
+    onPick: v => registerWatering(id, v, false),
+    onSkip: () => registerWatering(id, null, false)
+  });
+}
+function askReading(id){
+  const p = getPlant(id); if(!p) return;
+  openReading({
+    title: p.apodo,
+    msg: `${p.real} · pincha a ${p.profundidad.toLowerCase()} de la maceta` + (isAuto(p) ? '' : ` · regar si ≤ ${p.umbral}`),
+    onPick: v => saveReading(id, v, 'ronda')
+  });
+}
+function askPosterior(id){
+  const p = getPlant(id); if(!p) return;
+  openReading({
+    title: `Lectura posterior · ${p.apodo}`,
+    msg: `Mide 10-15 min después de regar, cuando ya haya drenado (${p.profundidad.toLowerCase()} de la maceta).`,
+    skipLabel: 'Saltar lectura',
+    onPick: v => savePosterior(id, v),
+    onSkip: () => skipPending(id)
+  });
+}
+
+// Ronda: pasa una a una por las plantas "Por medir"
+let roundQueue = [];
+let roundTotal = 0;
+function startRound(){
+  const ids = state.plants
+    .filter(p => (currentFilter==='todas' || p.ubicacion===currentFilter) && statusFor(p)==='medir')
+    .map(p => p.id);
+  if(!ids.length){ showToast('No hay plantas pendientes de medir.'); return; }
+  roundQueue = ids; roundTotal = ids.length;
+  nextRound();
+}
+function nextRound(){
+  if(!roundQueue.length){
+    render();
+    const toWater = state.plants.filter(p=>statusFor(p)==='regar').length;
+    showToast(toWater ? `Ronda terminada: ${toWater} planta${toWater>1?'s':''} por regar.` : 'Ronda terminada: nada que regar.');
+    return;
+  }
+  const id = roundQueue.shift();
+  const p = getPlant(id);
+  if(!p){ nextRound(); return; }
+  const idx = roundTotal - roundQueue.length;
+  openReading({
+    title: `${p.apodo}  (${idx}/${roundTotal})`,
+    msg: `${p.real} · pincha a ${p.profundidad.toLowerCase()} de la maceta · regar si ≤ ${p.umbral}`,
+    skipLabel: 'Saltar',
+    onPick: v => { saveReading(id, v, 'ronda'); nextRound(); },
+    onSkip: () => nextRound(),
+    onCancel: () => { roundQueue = []; render(); }
+  });
+}
+
+function updateField(id, field, value){
+  const p = getPlant(id);
+  p[field] = value;
+  saveState();
+}
+function setEspera(id, raw){
+  const p = getPlant(id); if(!p) return;
+  const n = parseInt(raw, 10);
+  p.esperaMin = (raw === '' || isNaN(n) || n < 0) ? null : Math.min(n, 365);
+  saveState();
+  render();
+}
+// Editar a mano "Último riego" también actualiza el historial
+function setUltimoRiego(id, value){
+  const p = getPlant(id); if(!p) return;
+  p.ultimoRiego = value || '';
+  if(value){
+    const d = parseDate(value);
+    if(d){
+      d.setHours(12,0,0,0);
+      if(p.riegos[0] && p.riegos[0].legacy) p.riegos.shift();
+      p.riegos.unshift({fecha:value, ts:d.getTime(), previa:null, posterior:null, legacy:true});
+      p.riegos.sort((a,b)=>b.ts-a.ts);
+    }
+  }
+  saveState();
+  render();
+}
+function setSeason(v){
+  state.estacion = v;
+  saveState();
+  renderHeader();
+  render();
+}
+function llovio(){
+  const list = state.plants.filter(p=>p.ubicacion==='Exterior' && !isAuto(p));
+  if(!list.length){ showToast('No hay plantas exteriores de riego manual.'); return; }
+  showConfirm(
+    `Marcar como regadas hoy por la lluvia: ${list.map(p=>p.apodo).join(', ')}. No cuenta para el secado medio.`,
+    ()=>{
+      const ts = Date.now(), iso = toISO(new Date(ts));
+      list.forEach(p=>{
+        p.ultimoRiego = iso;
+        p.riegos.unshift({fecha:iso, ts, previa:null, posterior:null, legacy:true, lluvia:true});
+        p.riegos.sort((a,b)=>b.ts-a.ts);
+      });
+      saveState();
+      render();
+      showToast(`Lluvia registrada en ${list.length} planta${list.length>1?'s':''}.`);
+    },
+    {title:'¿Llovió hoy?', label:'Sí, registrar', danger:false}
+  );
+}
+function setConfig(id, field, value){
+  updateField(id, field, value);
+  render();
+}
+
+function addComment(id, text){
+  if(!text.trim()) return;
+  const p = getPlant(id);
+  p.comentarios.unshift({fecha: toISO(startOfToday()), texto: text.trim()});
+  saveState();
+  render();
+}
+function deleteComment(id, idx){
+  const p = getPlant(id);
+  p.comentarios.splice(idx,1);
+  saveState();
+  render();
+}
+
+/* ---------- Render ---------- */
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML;
+}
+function escapeAttr(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+function autoGrow(el){ el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
+
+function optionsHTML(list, selected){
+  return list.map(([val,label])=>`<option value="${escapeAttr(val)}" ${String(val)===String(selected)?'selected':''}>${escapeHtml(label)}</option>`).join('');
+}
+
+function pendText(p){
+  const mins = Math.floor((Date.now() - p.pendiente.ts) / 60000);
+  if(mins < POST_WAIT_MIN) return `medir a las ${fmtTime(p.pendiente.ts + POST_WAIT_MIN*60000)}`;
+  return `ya puedes medir`;
+}
+
+function sparkHTML(p){
+  const pts = p.lecturas.slice(0,12).reverse();
+  if(pts.length < 2) return '';
+  const W=300, H=56, padX=8, padY=6;
+  const x = i => padX + i*(W-2*padX)/(pts.length-1);
+  const y = v => H - padY - (v-1)/9*(H-2*padY);
+  const line = pts.map((q,i)=>`${x(i).toFixed(1)},${y(q.valor).toFixed(1)}`).join(' ');
+  const dots = pts.map((q,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(q.valor).toFixed(1)}" r="3" class="sp-dot ${zone(q.valor)}"/>`).join('');
+  const ty = y(p.umbral).toFixed(1);
+  return `<div class="spark"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución de las lecturas"><line x1="0" x2="${W}" y1="${ty}" y2="${ty}" class="sp-th"/><polyline points="${line}" class="sp-line"/>${dots}</svg><div class="spark-cap">Últimas ${pts.length} lecturas · línea roja = umbral (${p.umbral})</div></div>`;
+}
+
+function statsHTML(p){
+  const auto = isAuto(p);
+  const l = lastReading(p);
+  const parts = [];
+  if(l) parts.push(`Última lectura: <b>${l.valor}</b> (${ago(l.fecha)}, ${l.tipo})`);
+  else parts.push('Sin lecturas todavía.');
+  if(!auto){
+    const st = avgDrying(p);
+    if(st){
+      let t = `Secado medio: <b>~${st.avg.toFixed(1)} días</b> (${st.n} ciclo${st.n>1?'s':''}${st.total>st.n ? ' más recientes de '+st.total : ''})`;
+      if(st.n >= 2 && p.riegos[0] && !p.riegos[0].legacy){
+        t += ` · previsión de seco: <b>~${fmtShort(new Date(p.riegos[0].ts + st.avg*DAY))}</b>`;
+      }
+      parts.push(t);
+    } else {
+      parts.push('Aún sin ciclos completos (riego → lectura baja). Con 2-3 ciclos la app estimará cuánto tarda en secarse.');
+    }
+    const nm = nextMeasure(p);
+    parts.push(`Próxima medición sugerida: <b>${nm ? fmtShort(nm) : 'ya'}</b> (cada ~${cadenceDays(p)} días)`);
+    const wuS = waitUntil(p);
+    if(wuS) parts.push(`Espera mínima entre riegos: <b>${minWait(p)} días</b> (${SEASON_LABEL[currentSeason()].toLowerCase()}) · regar a partir del <b>${fmtShort(wuS)}</b>`);
+    const ref = FREQ_DAYS[p.freq];
+    if(ref && p.ultimoRiego){
+      const d = daysBetween(parseDate(p.ultimoRiego), startOfToday());
+      parts.push(`Referencia anterior (${FREQ_LABEL[p.freq].toLowerCase()}): último riego hace <b>${d} d</b>${d>=ref?' · superada':''}`);
+    }
+  }
+  return `<div class="stats">${parts.join('<br>')}</div>`;
+}
+
+function historyHTML(p){
+  const rd = p.lecturas.slice(0,8).map(l=>`${fmtShort(parseDate(l.fecha))} ${fmtTime(l.ts)} · <span class="chip z-${zone(l.valor)}">${l.valor}</span> ${l.tipo}`);
+  const rg = p.riegos.slice(0,6).map(r=>{
+    if(r.lluvia) return `${fmtShort(parseDate(r.fecha))} · 🌧 lluvia`;
+    if(r.legacy) return `${fmtShort(parseDate(r.fecha))} · riego (antes del medidor)`;
+    const a = r.previa==null ? '—' : r.previa;
+    const b = r.posterior==null ? '—' : r.posterior;
+    return `${fmtShort(parseDate(r.fecha))} ${fmtTime(r.ts)} · riego: previa ${a} → posterior ${b}`;
+  });
+  if(!rd.length && !rg.length) return '';
+  return `<details class="hist"><summary>Historial</summary>
+    <div class="hist-title">Lecturas</div><div class="hist-list">${rd.join('<br>') || '—'}</div>
+    <div class="hist-title">Riegos</div><div class="hist-list">${rg.join('<br>') || '—'}</div>
+  </details>`;
+}
+
+function cardHTML(p){
+  const status = statusFor(p);
+  const auto = status === 'auto';
+  const isOpen = openCards.has(p.id);
+  const l = lastReading(p);
+  const chip = l ? `<span class="chip z-${zone(l.valor)}">${l.valor}</span>` : '';
+  const measureBtn = `<button class="measure-btn-mini" onclick="event.stopPropagation(); askReading('${p.id}')">📏 Medir</button>`;
+
+  let metaHTML = '', headBtn = measureBtn;
+  if(status === 'regar'){
+    metaHTML = `<div class="meta regar"><div class="next-date">${chip} ≤${p.umbral}</div><div>${ago(l.fecha)}${p.lecturaDudosa ? ' · ⚠ confirma con el dedo' : ''}</div></div>`;
+    headBtn = `<button class="water-btn-mini" onclick="event.stopPropagation(); startWatering('${p.id}')">💧 Regar</button>`;
+  } else if(status === 'esperar'){
+    metaHTML = `<div class="meta soon"><div class="next-date">${chip} ≤${p.umbral}</div><div>esperar · ${fmtShort(waitUntil(p))}</div></div>`;
+  } else if(status === 'pendiente'){
+    metaHTML = `<div class="meta pend"><div class="next-date">${pendText(p)}</div></div>`;
+    headBtn = `<button class="water-btn-mini" onclick="event.stopPropagation(); askPosterior('${p.id}')">📏 Post.</button>`;
+  } else if(status === 'medir'){
+    metaHTML = l ? `<div class="meta soon"><div class="next-date">${chip}</div><div>${ago(l.fecha)}</div></div>`
+                 : `<div class="meta soon"><div class="next-date">sin lectura</div></div>`;
+  } else if(status === 'ok'){
+    const nm = nextMeasure(p);
+    metaHTML = `<div class="meta"><div class="next-date">${chip}</div><div>medir ${fmtShort(nm)}</div></div>`;
+  } else {
+    metaHTML = l ? `<div class="meta"><div class="next-date">${chip}</div><div>${ago(l.fecha)}</div></div>` : `<div class="meta">automático</div>`;
+  }
+
+  const warnDudosa = p.lecturaDudosa
+    ? `<div class="warn-box">⚠ Lectura poco fiable en este sustrato (drenante/arlita). Confirma con el dedo o el peso de la maceta antes de regar.</div>` : '';
+  const warnAuto = (auto && l && l.valor <= p.umbral && daysBetween(parseDate(l.fecha), startOfToday()) <= 14)
+    ? `<div class="warn-box red">⚠ Última lectura baja (${l.valor}): revisa que el riego automático funciona bien.</div>` : '';
+  const pend = p.pendiente
+    ? `<div class="warn-box" style="background:var(--auto-bg); color:var(--auto);">💧 Regada ${fmtTime(p.pendiente.ts)}: falta la lectura posterior (${pendText(p)}).</div>` : '';
+
+  const wuDate = waitUntil(p);
+  const warnEsperar = status === 'esperar'
+    ? `<div class="warn-box">⏳ Marca seco, pero la regaste ${ago(p.ultimoRiego)}. Espera mínima: ${minWait(p)} días (${SEASON_LABEL[currentSeason()].toLowerCase()}), regar a partir del ${fmtShort(wuDate)}. Si ves que lo necesita, puedes regarla antes con «Regar ahora».</div>` : '';
+
+  const actions = `<div class="actions">
+      <button class="btn" onclick="askReading('${p.id}')">📏 Anotar lectura</button>
+      ${auto ? '' : `<button class="water-btn" onclick="startWatering('${p.id}')">💧 Regar ahora</button>`}
+      ${p.pendiente ? `<button class="btn" onclick="askPosterior('${p.id}')">Lectura posterior</button><button class="btn" onclick="skipPending('${p.id}')">Saltar</button>` : ''}
+    </div>`;
+
+  const umbralOpts = optionsHTML([1,2,3,4,5,6,7,8,9].map(n=>[n,String(n)]), p.umbral);
+  const profOpts = optionsHTML([['Mitad','A la mitad'],['Fondo','Al fondo']], p.profundidad);
+  const freqOpts = optionsHTML(Object.keys(FREQ_DAYS).map(k=>[k, FREQ_LABEL[k]]), p.freq);
+
+  const config = `
+      <div class="row">
+        <span class="field-label">Regar si lectura ≤</span>
+        <select class="sel" onchange="setConfig('${p.id}','umbral',Number(this.value))">${umbralOpts}</select>
+      </div>
+      <div class="row">
+        <span class="field-label">Profundidad de lectura</span>
+        <select class="sel" onchange="setConfig('${p.id}','profundidad',this.value)">${profOpts}</select>
+      </div>
+      <div class="row">
+        <span class="field-label">Frecuencia (referencia)</span>
+        <select class="sel" onchange="setConfig('${p.id}','freq',this.value)">${freqOpts}</select>
+      </div>
+      <div class="row">
+        <label class="check-label"><input type="checkbox" ${p.lecturaDudosa?'checked':''} onchange="setConfig('${p.id}','lecturaDudosa',this.checked)"> Lectura poco fiable (sustrato drenante)</label>
+      </div>`;
+
+  const ultimoRiegoHTML = auto ? '' :
+    `<div class="row">
+      <span class="field-label">Último riego</span>
+      <input class="date-input" type="date" value="${p.ultimoRiego||''}" onchange="setUltimoRiego('${p.id}',this.value)">
+    </div>`;
+
+  const esperaHTML = auto ? '' :
+    `<div class="row">
+      <span class="field-label">Espera mínima entre riegos (días)</span>
+      <span><input class="date-input" type="number" min="0" max="365" style="width:72px" value="${p.esperaMin==null?'':p.esperaMin}" placeholder="${minWaitAuto(p)}" onchange="setEspera('${p.id}', this.value)"> <span class="field-value" style="font-size:11px;color:var(--ink-soft)">${p.esperaMin==null?'auto':'fija'}</span></span>
+    </div>`;
+
+  const tipHTML = `<div class="tip-box"><b>Tip experto</b>
+    <textarea placeholder="Añade tu propio tip o consejo..." oninput="autoGrow(this)" onchange="updateField('${p.id}','tip',this.value)">${escapeHtml(p.tip)}</textarea>
+  </div>`;
+
+  const commentsHTML = p.comentarios.map((c,idx)=>`
+    <div class="comment-item">
+      <div><span class="meta-date">${fmtDate(parseDate(c.fecha))}</span>${escapeHtml(c.texto)}</div>
+      <button class="del" onclick="deleteComment('${p.id}', ${idx})" title="Eliminar">✕</button>
+    </div>`).join('') || `<div class="empty-note">Sin comentarios todavía.</div>`;
+
+  return `
+  <div class="card ${isOpen?'open':''}" data-id="${p.id}">
+    <div class="card-head" onclick="toggleCard('${p.id}')">
+      <div class="dot ${status}"></div>
+      <div class="names">
+        <div class="apodo">${escapeHtml(p.apodo)}</div>
+        <div class="real">${escapeHtml(p.real)}</div>
+      </div>
+      ${metaHTML}
+      ${headBtn}
+      <div class="chevron">▶</div>
+    </div>
+    <div class="card-body">
+      <div class="badges">
+        <span class="badge">📍 ${escapeHtml(p.ubicacion)}</span>
+        <span class="badge">📏 ${p.profundidad==='Fondo'?'Fondo':'Mitad'} · ≤${p.umbral}</span>
+        <span class="badge">💧 ${FREQ_LABEL[p.freq]}</span>
+        <span class="badge">🌱 Fert: ${escapeHtml(p.fert) || '—'}</span>
+      </div>
+      ${pend}${warnEsperar}${warnAuto}${warnDudosa}
+      ${actions}
+      ${statsHTML(p)}
+      ${sparkHTML(p)}
+      ${historyHTML(p)}
+      ${config}
+      ${ultimoRiegoHTML}
+      ${esperaHTML}
+      <div class="row">
+        <span class="field-label">Último trasplante</span>
+        <input class="date-input" type="date" value="${p.trasplante||''}" onchange="updateField('${p.id}','trasplante',this.value)">
+      </div>
+      <div class="name-edit">
+        <div class="field">
+          <label>Apodo</label>
+          <input type="text" value="${escapeAttr(p.apodo)}" onchange="updateField('${p.id}','apodo',this.value)">
+        </div>
+        <div class="field">
+          <label>Nombre real</label>
+          <input type="text" value="${escapeAttr(p.real)}" onchange="updateField('${p.id}','real',this.value)">
+        </div>
+      </div>
+      ${tipHTML}
+      <div class="comments">
+        <span class="field-label">Comentarios</span>
+        ${commentsHTML}
+        <div class="comment-add">
+          <textarea placeholder="Añadir nota (ej. trasplantar, hojas amarillas...)" id="newc-${p.id}"></textarea>
+          <button class="btn primary" onclick="addComment('${p.id}', document.getElementById('newc-${p.id}').value); document.getElementById('newc-${p.id}').value='';">Añadir</button>
+        </div>
+      </div>
+      <div class="danger-zone">
+        <button class="delete-btn" onclick="event.stopPropagation(); deletePlant('${p.id}')">🗑 Eliminar planta</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCard(id){
+  if(openCards.has(id)) openCards.delete(id); else openCards.add(id);
+  render();
+}
+
+function deletePlant(id){
+  const p = getPlant(id);
+  if(!p) return;
+  showConfirm(
+    `¿Eliminar "${p.apodo}" (${p.real})? Esta acción no se puede deshacer.`,
+    ()=>{
+      state.plants = state.plants.filter(pl=>pl.id!==id);
+      openCards.delete(id);
+      saveState();
+      render();
+      showToast(`"${p.apodo}" eliminada.`);
+    }
+  );
+}
+
+function addPlant(){
+  const id = 'p' + Date.now();
+  const newPlant = normalizePlant({
+    id, real:'Nueva planta', apodo:'Sin nombre', freq:'1 Quincenal', fert:'No',
+    ubicacion:'Interior', ultimoRiego:'', trasplante:'', tip:'', comentarios:[]
+  });
+  state.plants.push(newPlant);
+  openCards.add(id);
+  saveState();
+  render();
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+const GROUPS = [
+  {key:'regar',     cls:'overdue', icon:'🔴', title:'Regar ahora'},
+  {key:'esperar',   cls:'soon',    icon:'⏳', title:'Seca · esperar'},
+  {key:'pendiente', cls:'auto',    icon:'🔵', title:'Lectura posterior pendiente'},
+  {key:'medir',     cls:'soon',    icon:'🟡', title:'Por medir'},
+  {key:'ok',        cls:'ok',      icon:'🟢', title:'Al día'},
+  {key:'auto',      cls:'auto',    icon:'💧', title:'Riego automático'}
+];
+
+function render(){
+  const filtered = state.plants.filter(p => currentFilter==='todas' || p.ubicacion===currentFilter);
+  let html = '';
+  GROUPS.forEach(g=>{
+    let list = filtered.filter(p=>statusFor(p)===g.key);
+    if(!list.length) return;
+    if(g.key==='regar') list.sort((a,b)=>lastReading(a).valor - lastReading(b).valor);
+    if(g.key==='esperar') list.sort((a,b)=>waitUntil(a) - waitUntil(b));
+    const btn = g.key==='medir' ? `<button class="btn group-btn" onclick="startRound()">▶ Iniciar ronda</button>` : '';
+    html += `<div class="group"><div class="group-title ${g.cls}">${g.icon} ${g.title} <span class="count">${list.length}</span>${btn}</div>${list.map(cardHTML).join('')}</div>`;
+  });
+  if(!filtered.length){
+    html = `<div class="empty-note">No hay plantas en este filtro.</div>`;
+  }
+  document.getElementById('groups').innerHTML = html;
+}
+
+function renderHeader(){
+  const today = startOfToday();
+  document.getElementById('todayLabel').textContent = fmtDate(today);
+  const sel = document.getElementById('seasonSel');
+  if(sel){
+    const opts = [['auto','Automática (' + SEASON_LABEL[seasonAuto()].toLowerCase() + ')'],['invierno','Invierno'],['normal','Primavera/otoño'],['verano','Verano']];
+    sel.innerHTML = optionsHTML(opts, state.estacion || 'auto');
+    const info = document.getElementById('seasonInfo');
+    if(info) info.textContent = 'Espera mínima ×' + String(SEASON_FACTOR[currentSeason()]).replace('.', ',');
+  }
+  const sat = nextSaturday(today);
+  const isSat = today.getDay() === 6;
+  document.getElementById('ribbonTxt').innerHTML = isSat
+    ? `Hoy es día de ronda: mide las plantas de «Por medir» y riega solo las que marquen por debajo de su umbral.`
+    : `Próxima ronda de medición: <b>sábado ${fmtShort(sat)}</b> — riega solo las que marquen por debajo de su umbral.`;
+}
+
+/* ---------- Tabs ---------- */
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  if(e.target.classList.contains('tab')){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFilter = e.target.dataset.filter;
+    render();
+  }
+});
+
+/* ---------- Temporada y lluvia ---------- */
+document.getElementById('seasonSel').addEventListener('change', (e)=> setSeason(e.target.value));
+document.getElementById('rainBtn').addEventListener('click', llovio);
+
+/* ---------- Export / Import ---------- */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `riego-backup-${toISO(startOfToday())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const data = JSON.parse(evt.target.result);
+      if(data && Array.isArray(data.plants)){
+        state = normalizeState(data);
+        saveState();
+        render();
+        showToast('Datos importados correctamente.');
+      } else {
+        showToast('El archivo no tiene el formato esperado.');
+      }
+    }catch(err){
+      showToast('No se pudo leer el archivo JSON.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+document.getElementById('addPlantBtn').addEventListener('click', addPlant);
+
+/* ---------- Modal de confirmación ---------- */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalMsg = document.getElementById('modalMsg');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+const modalCancelBtn = document.getElementById('modalCancelBtn');
+let pendingConfirmAction = null;
+
+function showConfirm(message, onConfirm, opts){
+  opts = opts || {};
+  document.getElementById('modalTitle').textContent = opts.title || '¿Eliminar planta?';
+  modalConfirmBtn.textContent = opts.label || 'Eliminar';
+  const danger = opts.danger !== false;
+  modalConfirmBtn.style.background = danger ? 'var(--overdue)' : 'var(--moss)';
+  modalConfirmBtn.style.borderColor = danger ? 'var(--overdue)' : 'var(--moss)';
+  modalMsg.textContent = message;
+  pendingConfirmAction = onConfirm;
+  modalOverlay.classList.add('open');
+}
+function closeModal(){
+  modalOverlay.classList.remove('open');
+  pendingConfirmAction = null;
+}
+modalConfirmBtn.addEventListener('click', ()=>{
+  if(pendingConfirmAction) pendingConfirmAction();
+  closeModal();
+});
+modalCancelBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) closeModal(); });
+
+/* ---------- Modal de lectura (1-10) ---------- */
+const readOverlay = document.getElementById('readOverlay');
+const readGrid = document.getElementById('readGrid');
+const readSkipBtn = document.getElementById('readSkipBtn');
+let readOpts = null;
+
+for(let v=1; v<=10; v++){
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = v;
+  b.className = 'z-' + zone(v);
+  b.addEventListener('click', ()=>{
+    const o = readOpts; closeReading();
+    if(o && o.onPick) o.onPick(v);
+  });
+  readGrid.appendChild(b);
+}
+function openReading(opts){
+  readOpts = opts;
+  document.getElementById('readTitle').textContent = opts.title;
+  document.getElementById('readMsg').textContent = opts.msg || '';
+  if(opts.skipLabel){ readSkipBtn.textContent = opts.skipLabel; readSkipBtn.style.display = ''; }
+  else { readSkipBtn.style.display = 'none'; }
+  readOverlay.classList.add('open');
+}
+function closeReading(){
+  readOverlay.classList.remove('open');
+  readOpts = null;
+}
+readSkipBtn.addEventListener('click', ()=>{
+  const o = readOpts; closeReading();
+  if(o && o.onSkip) o.onSkip();
+});
+function cancelReading(){
+  const o = readOpts; closeReading();
+  if(o && o.onCancel) o.onCancel();
+}
+document.getElementById('readCancelBtn').addEventListener('click', cancelReading);
+readOverlay.addEventListener('click', (e)=>{ if(e.target === readOverlay) cancelReading(); });
+
+/* ---------- Toast ---------- */
+let toastTimer = null;
+function showToast(message){
+  const t = document.getElementById('toast');
+  t.textContent = message;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 3200);
+}
+
+/* ---------- Init ---------- */
+state = loadState();
+saveState();
+renderHeader();
+render();
+// refresca el aviso "ya puedes medir" de riegos pendientes
+setInterval(()=>{ if(state.plants.some(p=>p.pendiente) && !readOverlay.classList.contains('open')) render(); }, 60000);
+</script>
+</body>
+</html>
